@@ -1,0 +1,24 @@
+# top-most EditorConfig file
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+indent_size = 4
+indent_style = space
+trim_trailing_whitespace = true
+
+# Apply to JavaScript files
+[*.{js,jsx,ts,tsx}]
+quote_type = single
+semi = true
+
+# Disable rules in .eslintrc.json that are not supported in .editorconfig
+[*.json]
+indent_style = space
+indent_size = 4
+
+# Add rules for specific files or directories
+[public/**]
+indent_size = 4

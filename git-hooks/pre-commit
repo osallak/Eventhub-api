@@ -1,0 +1,18 @@
+#!/bin/sh
+
+# Execute Laravel pint fix
+files=$(git diff --cached --name-only --diff-filter=ACM -- '*.php')
+
+echo "Auto-formatting code..."
+./vendor/bin/pint --config pint.json $files
+
+git add $files
+
+# Execute pint dry run to check for code style violations
+./vendor/bin/pint --config pint.json --test $files
+
+# Check exit code
+if [ $? != 0 ]; then
+    echo "Laravel pint violations detected. Commit aborted."
+    exit 1
+fi

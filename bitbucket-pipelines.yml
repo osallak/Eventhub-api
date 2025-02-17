@@ -1,0 +1,44 @@
+pipelines:
+  custom:
+    deploy-with-reset:
+      - step:
+          name: Deploy with reset
+          script:
+            - echo "Deploying to $BITBUCKET_BRANCH"
+            - PHP_PATH='/opt/plesk/php/8.3/bin/php'
+            - COMPOSER_PATH='/var/www/vhosts/cysc.fr/.phpenv/shims/composer'
+            - pipe: atlassian/ssh-run:0.6.0
+              variables:
+                SSH_USER: 'cyberscale'
+                SERVER: '93.90.204.197'
+                COMMAND: 'cd ~/cysc.fr/$BITBUCKET_BRANCH/project-name/api && git pull && ${PHP_PATH} ${COMPOSER_PATH} install --prefer-dist --no-dev --no-interaction && ${PHP_PATH} artisan migrate:refresh && ${PHP_PATH} artisan progressive-seeder:run'
+            - echo "Finished Deploying to $BITBUCKET_BRANCH"
+  branches:
+    staging:
+      - step:
+          name: Deploy to staging
+          deployment: staging
+          script:
+            - echo "Deploying to $BITBUCKET_BRANCH"
+            - PHP_PATH='/opt/plesk/php/8.3/bin/php'
+            - COMPOSER_PATH='/var/www/vhosts/cysc.fr/.phpenv/shims/composer'
+            - pipe: atlassian/ssh-run:0.6.0
+              variables:
+                SSH_USER: 'cyberscale'
+                SERVER: '93.90.204.197'
+                COMMAND: 'cd ~/cysc.fr/$BITBUCKET_BRANCH/project-name/api && git pull && ${PHP_PATH} ${COMPOSER_PATH} install --prefer-dist --no-dev --no-interaction && ${PHP_PATH} artisan migrate:refresh && ${PHP_PATH} artisan progressive-seeder:run'
+            - echo "Finished Deploying to $BITBUCKET_BRANCH"
+    preprod:
+      - step:
+          name: Deploy to preprod
+          deployment: preprod
+          script:
+            - echo "Deploying to $BITBUCKET_BRANCH"
+            - PHP_PATH='/opt/plesk/php/8.3/bin/php'
+            - COMPOSER_PATH='/var/www/vhosts/cysc.fr/.phpenv/shims/composer'
+            - pipe: atlassian/ssh-run:0.6.0
+              variables:
+                SSH_USER: 'cyberscale'
+                SERVER: '93.90.204.197'
+                COMMAND: 'cd ~/cysc.fr/$BITBUCKET_BRANCH/project-name/api && git pull && ${PHP_PATH} ${COMPOSER_PATH} install --prefer-dist --no-dev --no-interaction && ${PHP_PATH} artisan migrate && ${PHP_PATH} artisan progressive-seeder:run'
+            - echo "Finished Deploying to $BITBUCKET_BRANCH"
