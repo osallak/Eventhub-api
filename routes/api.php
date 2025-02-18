@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -29,6 +29,8 @@ Route::prefix('auth')->name('auth.')->group(
                         return response()->json(['success' => false, 'errors' => [__('auth.disconnected')]]);
                     }
                 );
+                Route::post('/logout', 'logout');
+                Route::post('/refresh', 'refresh');
             }
         );
     }
