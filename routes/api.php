@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\UserController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -24,57 +25,44 @@ Route::prefix('auth')->name('auth.')->group(
                 Route::post('/register', 'register');
                 Route::post('/request-password-reset', 'requestPasswordReset');
                 Route::post('/reset-password', 'resetPassword');
-                Route::get(
-                    '/disconnected', function () {
-                        return response()->json(['success' => false, 'errors' => [__('auth.disconnected')]]);
-                    }
-                );
-                Route::post('/logout', 'logout');
-                Route::post('/refresh', 'refresh');
+                Route::get('/disconnected', function () {
+                    return response()->json(['success' => false, 'errors' => [__('auth.disconnected')]]);
+                });
+                Route::middleware('auth:api')->group(function () {
+                    Route::post('/logout', 'logout');
+                    Route::post('/refresh', 'refresh');
+                    Route::get('/me', 'me');
+                });
             }
         );
     }
 );
 
-Route::middleware('auth:api')->group(
+Route::prefix('users')->name('users.')->group(
     function () {
-        Route::prefix('auth')->name('auth.')->group(
+        Route::controller(UserController::class)->group(
             function () {
-                Route::controller(AuthController::class)->group(
-                    function () {
-                        Route::post('/me', 'me');
-                        Route::post('/logout', 'logout');
-                    }
-                );
+                Route::post('/', 'createOne');
+                Route::get('/{id}', 'readOne');
+                Route::get('/', 'readAll');
+                Route::put('/{id}', 'updateOne');
+                Route::patch('/{id}', 'patchOne');
+                Route::delete('/{id}', 'deleteOne');
             }
         );
-        Route::prefix('users')->name('users.')->group(
-            function () {
-                Route::controller(UserController::class)->group(
-                    function () {
-                        Route::post('/', 'createOne');
-                        Route::get('/{id}', 'readOne');
-                        Route::get('/', 'readAll');
-                        Route::put('/{id}', 'updateOne');
-                        Route::patch('/{id}', 'patchOne');
-                        Route::delete('/{id}', 'deleteOne');
-                    }
-                );
-            }
-        );
+    }
+);
 
-        Route::prefix('uploads')->name('uploads.')->group(
+Route::prefix('uploads')->name('uploads.')->group(
+    function () {
+        Route::controller(UploadController::class)->group(
             function () {
-                Route::controller(UploadController::class)->group(
-                    function () {
-                        Route::post('/', 'createOne');
-                        Route::get('/{id}', 'readOne');
-                        Route::get('/', 'readAll');
-                        Route::post('/{id}', 'updateOne');
-                        Route::delete('/{id}', 'deleteOne');
-                        Route::delete('/', 'deleteMulti');
-                    }
-                );
+                Route::post('/', 'createOne');
+                Route::get('/{id}', 'readOne');
+                Route::get('/', 'readAll');
+                Route::post('/{id}', 'updateOne');
+                Route::delete('/{id}', 'deleteOne');
+                Route::delete('/', 'deleteMulti');
             }
         );
     }
@@ -161,6 +149,15 @@ if (config('app.debug')) {
                     );
                 }
             );
+            Route::get('/debug-token', function (Request $request) {
+                return response()->json([
+                    'token_exists' => $request->bearerToken() ? 'yes' : 'no',
+                    'token' => $request->bearerToken(),
+                    'auth_check' => auth()->check() ? 'yes' : 'no',
+                    'user' => auth()->user(),
+                    'guard' => auth()->getDefaultDriver(),
+                ]);
+            })->middleware('auth:api');
         }
     );
 }
