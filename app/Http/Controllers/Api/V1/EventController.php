@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Event;
+use App\Notifications\EventNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
@@ -94,5 +95,76 @@ class EventController extends Controller
     {
         $this->authorize('delete', $event);  // Will throw 403 if not creator
         // ... delete logic ...
+    }
+
+    public function join($id)
+    {
+        try {
+            $event = Event::findOrFail($id);
+            $user = auth()->user();
+
+            // ... existing validation checks ...
+
+            // All checks passed, join the event
+            $event->participants()->attach($user->id);
+            $event->increment('current_participants');
+
+            // Notify other participants
+            $otherParticipants = $event->participants()
+                ->where('user_id', '!=', $user->id)
+                ->get();
+
+            foreach ($otherParticipants as $participant) {
+                $participant->notify(new EventNotification(
+                    $event,
+                    EventNotification::TYPE_JOIN,
+                    "{$user->name} has joined the event",
+                    $user
+                ));
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Successfully joined the event',
+                'data' => $event->fresh()->load(['creator', 'participants']),
+            ]);
+
+        } catch (\Exception $e) {
+            // ... existing error handling ...
+        }
+    }
+
+    public function leave($id)
+    {
+        try {
+            $event = Event::findOrFail($id);
+            $user = auth()->user();
+
+            // ... existing validation checks ...
+
+            // All checks passed, leave the event
+            $event->participants()->detach($user->id);
+            $event->decrement('current_participants');
+
+            // Notify other participants
+            $otherParticipants = $event->participants()->get();
+            foreach ($otherParticipants as $participant) {
+                $participant->notify(new EventNotification(
+                    $event,
+                    EventNotification::TYPE_LEAVE,
+                    "{$user->name} has left the event",
+                    $user
+                ));
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Successfully left the event',
+                'data' => $event->fresh()->load(['creator', 'participants']),
+            ]);
+
+        } catch (\Exception $e) {
+            // ... existing error handling ...
+        }
     }
 }
