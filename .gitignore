@@ -19,3 +19,5 @@ yarn-error.log
 .php-ini
 /public/.php-ini
 /public/.php-version
+
+/.cursor/rules

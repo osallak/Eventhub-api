@@ -17,6 +17,11 @@ return new class extends Migration
             'users', function (Blueprint $table) {
                 $table->id();
                 $table->string('email')->unique();
+                $table->string('name');
+                $table->string('username')->unique()->nullable();
+                $table->string('first_name')->nullable();
+                $table->string('last_name')->nullable();
+                $table->text('avatar_url')->nullable();
                 $table->timestamp('email_verified_at')->nullable();
                 $table->string('password');
                 $table->rememberToken();
