@@ -13,7 +13,7 @@ class EventController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth:api');
+        $this->middleware('auth:api')->except(['index']);
     }
 
     public function store(Request $request)
@@ -166,5 +166,67 @@ class EventController extends Controller
         } catch (\Exception $e) {
             // ... existing error handling ...
         }
+    }
+
+    public function index(Request $request)
+    {
+        $query = Event::with(['creator', 'participants'])
+            ->when($request->has('status') || $request->has('status'), function ($q) use ($request) {
+                return $q->where('status', $request->input('status', $request->status));
+            })
+            ->when($request->has('category'), function ($q) use ($request) {
+                return $q->where('category', $request->category);
+            })
+            ->when($request->has('event_type') || $request->has('eventType'), function ($q) use ($request) {
+                return $q->where('event_type', $request->input('event_type', $request->eventType));
+            })
+            ->when($request->has('start_date') || $request->has('startDate'), function ($q) use ($request) {
+                return $q->whereDate('start_date', '>=', $request->input('start_date', $request->startDate));
+            })
+            ->when($request->has('end_date') || $request->has('endDate'), function ($q) use ($request) {
+                return $q->whereDate('start_date', '<=', $request->input('end_date', $request->endDate));
+            })
+            ->when($request->has('is_paid') || $request->has('isPaid'), function ($q) use ($request) {
+                $isPaid = $request->input('is_paid', $request->isPaid);
+
+                return $q->where('is_paid', filter_var($isPaid, FILTER_VALIDATE_BOOLEAN));
+            })
+            ->when($request->has('city'), function ($q) use ($request) {
+                return $q->where('city', 'like', '%'.$request->city.'%');
+            });
+
+        // Default to published events only for public access
+        if (! $request->has('status')) {
+            $query->where('status', 'published');
+        }
+
+        // Add some debug logging
+        \Log::info('Event query parameters', [
+            'request' => $request->all(),
+            'sql' => $query->toSql(),
+            'bindings' => $query->getBindings(),
+        ]);
+
+        // Order by start_date by default
+        $query->orderBy('start_date', 'asc');
+
+        $perPage = $request->input('per_page', 10);
+        $events = $query->paginate($perPage);
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $events,
+            'meta' => [
+                'filters' => [
+                    'status' => $request->input('status'),
+                    'category' => $request->input('category'),
+                    'event_type' => $request->input('event_type', $request->input('eventType')),
+                    'start_date' => $request->input('start_date', $request->input('startDate')),
+                    'end_date' => $request->input('end_date', $request->input('endDate')),
+                    'is_paid' => $request->input('is_paid', $request->input('isPaid')),
+                    'city' => $request->input('city'),
+                ],
+            ],
+        ]);
     }
 }

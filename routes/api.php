@@ -166,11 +166,11 @@ if (config('app.debug')) {
 Route::middleware('api')->group(function () {
     Route::prefix('events')->name('events.')->group(function () {
         Route::controller(EventController::class)->group(function () {
-            Route::post('/', 'store');
+            Route::get('/', 'index');
+            Route::post('/', 'store')->middleware('auth:api');
         });
     });
 });
-
 Route::prefix('notifications')->name('notifications.')->middleware('auth:api')->group(function () {
     Route::get('/', [NotificationController::class, 'index']);
     Route::patch('/{id}/read', [NotificationController::class, 'markAsRead']);
