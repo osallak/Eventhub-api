@@ -167,7 +167,9 @@ Route::middleware('api')->group(function () {
     Route::prefix('events')->name('events.')->group(function () {
         Route::controller(EventController::class)->group(function () {
             Route::get('/', 'index');
+            Route::get('/{id}', 'show');
             Route::post('/', 'store')->middleware('auth:api');
+            Route::post('/{id}/join', 'join')->middleware('auth:api');
         });
     });
 });

@@ -1,3 +1,5 @@
+<?php
+
 namespace App\Notifications;
 
 use App\Models\Event;
@@ -11,15 +13,20 @@ class EventNotification extends Notification
 
     // Add constants for notification types
     const TYPE_JOIN = 'participant_joined';
+
     const TYPE_LEAVE = 'participant_left';
+
     const TYPE_INVITE = 'event_invite';
 
     protected $event;
+
     protected $type;
+
     protected $message;
+
     protected $actor;  // The user who performed the action
 
-    public function __construct(Event $event, string $type, string $message, User $actor = null)
+    public function __construct(Event $event, string $type, string $message, ?User $actor = null)
     {
         $this->event = $event;
         $this->type = $type;  // 'invite', 'reminder', etc.

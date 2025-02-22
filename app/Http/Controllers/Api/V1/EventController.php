@@ -13,7 +13,7 @@ class EventController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth:api')->except(['index']);
+        $this->middleware('auth:api')->except(['index', 'show']);
     }
 
     public function store(Request $request)
@@ -100,28 +100,71 @@ class EventController extends Controller
     public function join($id)
     {
         try {
-            $event = Event::findOrFail($id);
+            $event = Event::with(['participants'])->findOrFail($id);
             $user = auth()->user();
 
-            // ... existing validation checks ...
+            // Check if event is published
+            if ($event->status !== 'published') {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Cannot join an unpublished event',
+                ], 400);
+            }
+
+            // Check if user is already a participant
+            if ($event->participants->contains($user->id)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'You are already a participant in this event',
+                ], 400);
+            }
+
+            // Check if event is in the past with timezone consideration
+            $eventDate = \Carbon\Carbon::parse($event->start_date);
+            $eventTime = \Carbon\Carbon::parse($event->start_time)->format('H:i');
+            $eventDateTime = $eventDate->copy()->setTimeFromTimeString($eventTime);
+
+            $now = \Carbon\Carbon::now($event->timezone);
+
+            // Add debug logging
+            \Log::info('Event date comparison', [
+                'event_date' => $eventDateTime->toDateTimeString(),
+                'event_timezone' => $event->timezone,
+                'current_date' => $now->toDateTimeString(),
+                'is_past' => $eventDateTime->lt($now),
+                'raw_event_data' => [
+                    'start_date' => $event->start_date,
+                    'start_time' => $eventTime,
+                ],
+            ]);
+
+            if ($eventDateTime->lt($now)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Cannot join a past event',
+                ], 400);
+            }
+
+            // Check if event is full
+            if ($event->max_participants && $event->current_participants >= $event->max_participants) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Event has reached maximum participants',
+                ], 400);
+            }
 
             // All checks passed, join the event
             $event->participants()->attach($user->id);
             $event->increment('current_participants');
 
-            // Notify other participants
-            $otherParticipants = $event->participants()
-                ->where('user_id', '!=', $user->id)
-                ->get();
-
-            foreach ($otherParticipants as $participant) {
-                $participant->notify(new EventNotification(
-                    $event,
-                    EventNotification::TYPE_JOIN,
-                    "{$user->name} has joined the event",
-                    $user
-                ));
-            }
+            // Notify the event creator
+            $event->load('creator');
+            $event->creator->notify(new EventNotification(
+                $event,
+                EventNotification::TYPE_JOIN,
+                "{$user->name} has joined your event",
+                $user
+            ));
 
             return response()->json([
                 'status' => 'success',
@@ -129,8 +172,23 @@ class EventController extends Controller
                 'data' => $event->fresh()->load(['creator', 'participants']),
             ]);
 
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Event not found',
+            ], 404);
         } catch (\Exception $e) {
-            // ... existing error handling ...
+            \Log::error('Failed to join event', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => auth()->id(),
+                'event_id' => $id,
+            ]);
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to join event',
+            ], 500);
         }
     }
 
@@ -228,5 +286,34 @@ class EventController extends Controller
                 ],
             ],
         ]);
+    }
+
+    public function show($id)
+    {
+        try {
+            $event = Event::with(['creator', 'participants'])
+                ->where('status', 'published')
+                ->findOrFail($id);
+
+            return response()->json([
+                'status' => 'success',
+                'data' => $event,
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Event not found',
+            ], 404);
+        } catch (\Exception $e) {
+            \Log::error('Failed to fetch event', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to fetch event',
+            ], 500);
+        }
     }
 }
