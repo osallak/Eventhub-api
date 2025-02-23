@@ -170,6 +170,9 @@ Route::middleware('api')->group(function () {
             Route::get('/{id}', 'show');
             Route::post('/', 'store')->middleware('auth:api');
             Route::post('/{id}/join', 'join')->middleware('auth:api');
+            Route::post('/{event}/leave', 'leave')->name('events.leave');
+            Route::put('/{id}', 'update')->middleware('auth:api')->name('events.update');
+            Route::delete('/{id}', 'destroy')->middleware('auth:api')->name('events.destroy');
         });
     });
 });
