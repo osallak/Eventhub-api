@@ -181,3 +181,7 @@ Route::prefix('notifications')->name('notifications.')->middleware('auth:api')->
     Route::patch('/{id}/read', [NotificationController::class, 'markAsRead']);
     Route::patch('/read-all', [NotificationController::class, 'markAllAsRead']);
 });
+
+Route::get('/health', function () {
+    return response()->json(['status' => 'ok']);
+});
