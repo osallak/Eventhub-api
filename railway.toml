@@ -1,11 +1,8 @@
 [build]
-builder = "nixpacks"
+builder = "NIXPACKS"
 buildCommand = "composer install --no-interaction --prefer-dist --optimize-autoloader"
 
 [deploy]
-startCommand = "php artisan migrate --force && php artisan config:cache && php -S 0.0.0.0:$PORT -t public"
+startCommand = "php artisan migrate --force && php -S 0.0.0.0:$PORT -t public"
 healthcheckPath = "/"
 healthcheckTimeout = 90
-
-[variables]
-PHP_VERSION = "8.1"
