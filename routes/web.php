@@ -14,7 +14,11 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
-    return redirect('/api/health');
+    return response()->json([
+        'name' => 'EventHub API',
+        'version' => '1.0',
+        'status' => 'running',
+    ]);
 });
 
 Route::get(

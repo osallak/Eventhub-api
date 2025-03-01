@@ -20,6 +20,14 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+Route::get('/debug-route', function () {
+    return response()->json([
+        'message' => 'This is a test route',
+        'route' => request()->path(),
+        'method' => request()->method(),
+    ]);
+});
+
 Route::get('/health', function () {
     return response()->json(['status' => 'ok']);
 });
@@ -195,4 +203,13 @@ Route::get('/db-test', function () {
     } catch (\Exception $e) {
         return response()->json(['database_status' => 'failed', 'error' => $e->getMessage()]);
     }
+});
+
+// Add this test endpoint for debugging POST requests
+Route::post('/test-post', function (Request $request) {
+    return response()->json([
+        'message' => 'POST request received',
+        'data' => $request->all(),
+        'path' => $request->path(),
+    ]);
 });

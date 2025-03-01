@@ -2,10 +2,12 @@
 
 namespace App\Exceptions;
 
+use Exception;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Throwable;
 
 class Handler extends ExceptionHandler
 {
@@ -66,5 +68,15 @@ class Handler extends ExceptionHandler
         }
 
         return response()->json(['success' => false, 'errors' => $errors]);
+    }
+
+    public function render($request, Exception|Throwable $exception)
+    {
+        // Prevent redirects for API routes
+        if ($request->is('api/*') || $request->wantsJson()) {
+            return parent::render($request, $exception);
+        }
+
+        return parent::render($request, $exception);
     }
 }

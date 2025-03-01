@@ -1,14 +1,21 @@
 #!/bin/bash
 set -e
 
-# Clear config and cache
+# Set JWT secret if not already set
+if [ -z "$JWT_SECRET" ]; then
+  export JWT_SECRET="RT9cObl5vsnGV4jno6rJcMtRnPPg6C9nCY6wQfRfhIH7b28sVCptNErVFfGLtMVp"
+fi
+
+# Enable debugging
+export API_DEBUG=true
+
+# Clear config cache
 php artisan config:clear
+php artisan route:clear
+php artisan cache:clear
 
-# Run migrations if the database is available
-php artisan migrate --force || true
+# List available routes
+php artisan route:list
 
-# Update Apache port configuration
-sed -i "s/Listen 80/Listen ${PORT:-8080}/" /etc/apache2/ports.conf
-
-# Start Apache in foreground
-apache2-foreground
+# Start the PHP built-in server
+php -S 0.0.0.0:${PORT:-8080} -t public
