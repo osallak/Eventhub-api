@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -184,4 +185,14 @@ Route::prefix('notifications')->name('notifications.')->middleware('auth:api')->
     Route::get('/', [NotificationController::class, 'index']);
     Route::patch('/{id}/read', [NotificationController::class, 'markAsRead']);
     Route::patch('/read-all', [NotificationController::class, 'markAllAsRead']);
+});
+
+Route::get('/db-test', function () {
+    try {
+        DB::connection()->getPdo();
+
+        return response()->json(['database_status' => 'connected']);
+    } catch (\Exception $e) {
+        return response()->json(['database_status' => 'failed', 'error' => $e->getMessage()]);
+    }
 });

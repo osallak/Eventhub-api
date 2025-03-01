@@ -3,6 +3,6 @@ builder = "NIXPACKS"
 buildCommand = "composer install --no-interaction --prefer-dist --optimize-autoloader"
 
 [deploy]
-startCommand = "php artisan config:clear && php artisan migrate --force && php -S 0.0.0.0:$PORT -t public"
 healthcheckPath = "/api/health"
 healthcheckTimeout = 90
+

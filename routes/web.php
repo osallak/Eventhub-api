@@ -13,6 +13,10 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+Route::get('/', function () {
+    return redirect('/api/health');
+});
+
 Route::get(
     '/auth/disconnected', function () {
         return __('auth.disconnected');
