@@ -19,6 +19,10 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+Route::get('/health', function () {
+    return response()->json(['status' => 'ok']);
+});
+
 Route::prefix('auth')->name('auth.')->group(
     function () {
         Route::controller(AuthController::class)->group(
@@ -180,8 +184,4 @@ Route::prefix('notifications')->name('notifications.')->middleware('auth:api')->
     Route::get('/', [NotificationController::class, 'index']);
     Route::patch('/{id}/read', [NotificationController::class, 'markAsRead']);
     Route::patch('/read-all', [NotificationController::class, 'markAllAsRead']);
-});
-
-Route::get('/health', function () {
-    return response()->json(['status' => 'ok']);
 });
