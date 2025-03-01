@@ -1,6 +1,5 @@
 [build]
-builder = "NIXPACKS"
-buildCommand = "composer install --no-interaction --prefer-dist --optimize-autoloader"
+builder = "DOCKER"
 
 [deploy]
 healthcheckPath = "/api/health"
