@@ -13,6 +13,14 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+Route::get('/', function () {
+    return response()->json([
+        'name' => 'EventHub API',
+        'version' => '1.0',
+        'status' => 'running',
+    ]);
+});
+
 Route::get(
     '/auth/disconnected', function () {
         return __('auth.disconnected');

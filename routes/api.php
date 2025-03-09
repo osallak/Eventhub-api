@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -18,6 +19,18 @@ use Illuminate\Support\Facades\Route;
 | is assigned the "api" middleware group. Enjoy building your API!
 |
 */
+
+Route::get('/debug-route', function () {
+    return response()->json([
+        'message' => 'This is a test route',
+        'route' => request()->path(),
+        'method' => request()->method(),
+    ]);
+});
+
+Route::get('/health', function () {
+    return response()->json(['status' => 'ok']);
+});
 
 Route::prefix('auth')->name('auth.')->group(
     function () {
@@ -166,13 +179,37 @@ if (config('app.debug')) {
 Route::middleware('api')->group(function () {
     Route::prefix('events')->name('events.')->group(function () {
         Route::controller(EventController::class)->group(function () {
-            Route::post('/', 'store');
+            Route::get('/', 'index');
+            Route::get('/{id}', 'show');
+            Route::post('/', 'store')->middleware('auth:api');
+            Route::post('/{id}/join', 'join')->middleware('auth:api');
+            Route::post('/{event}/leave', 'leave')->name('events.leave');
+            Route::put('/{id}', 'update')->middleware('auth:api')->name('events.update');
+            Route::delete('/{id}', 'destroy')->middleware('auth:api')->name('events.destroy');
         });
     });
 });
-
 Route::prefix('notifications')->name('notifications.')->middleware('auth:api')->group(function () {
     Route::get('/', [NotificationController::class, 'index']);
     Route::patch('/{id}/read', [NotificationController::class, 'markAsRead']);
     Route::patch('/read-all', [NotificationController::class, 'markAllAsRead']);
+});
+
+Route::get('/db-test', function () {
+    try {
+        DB::connection()->getPdo();
+
+        return response()->json(['database_status' => 'connected']);
+    } catch (\Exception $e) {
+        return response()->json(['database_status' => 'failed', 'error' => $e->getMessage()]);
+    }
+});
+
+// Add this test endpoint for debugging POST requests
+Route::post('/test-post', function (Request $request) {
+    return response()->json([
+        'message' => 'POST request received',
+        'data' => $request->all(),
+        'path' => $request->path(),
+    ]);
 });
